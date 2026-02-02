@@ -1,0 +1,29 @@
+name: Docker Save
+on: workflow_dispatch # 手动触发
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Pull and Save Images
+        run: |
+          # 在这里替换成你需要的镜像列表
+          docker pull langgenius/dify-api:1.11.4
+          docker pull semitechnologies/weaviate:1.27.0
+          docker pull nginx:latest
+          docker pull busybox:latest
+          docker pull ubuntu/squid:latest
+          docker pull postgres:15-alpine
+          docker pull langgenius/dify-sandbox:0.2.12
+          docker pull redis:6-alpine
+          docker pull langgenius/dify-web:1.11.4
+          docker pull langgenius/dify-plugin-daemon:0.5.2-local
+          
+          # ... 其他镜像
+          docker save -o dify-images.tar langgenius/dify-api:1.11.4 semitechnologies/weaviate:1.27.0 nginx:latest busybox:latest ubuntu/squid:latest postgres:15-alpine langgenius/dify-sandbox:0.2.12 redis:6-alpine langgenius/dify-web:1.11.4 langgenius/dify-plugin-daemon:0.5.2-local
+          
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: dify-offline-bundle
+          path: dify-images.tar
