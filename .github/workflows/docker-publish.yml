@@ -1,32 +1,14 @@
-name: Dify-ARM64-Packer-V2
-
-on:
-  workflow_dispatch: # 手动触发
-
-jobs:
-  build:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Maximize Disk Space
-        run: |
-          sudo rm -rf /usr/share/dotnet
-          sudo rm -rf /opt/ghc
-          sudo rm -rf "/usr/local/share/boost"
-          sudo rm -rf /usr/local/lib/android
-          sudo rm -rf /etc/apt/sources.list.d/*
-
-      - name: Set up QEMU
-        uses: docker/setup-qemu-action@v3
-
-      - name: Pull ARM64 Images
+- name: Pull ARM64 Images
         run: |
           # 核心服务 (指定 arm64 架构)
           docker pull --platform linux/arm64 langgenius/dify-api:1.11.4
           docker pull --platform linux/arm64 langgenius/dify-web:1.11.4
           docker pull --platform linux/arm64 langgenius/dify-sandbox:0.2.12
           
-          # 注意：如果 0.5.2-local 报错，请尝试官方标签 0.0.3
-          docker pull --platform linux/arm64 langgenius/dify-plugin-daemon:0.0.3
+          # 修正后的插件守护进程镜像：通常是 0.0.1 或者使用最新稳定版
+          # 针对 1.11.4，我们尝试拉取 0.0.1，如果你的 YAML 里写的是 0.5.2-local，
+          # 离线导入后我们可以用 docker tag 改名对齐。
+          docker pull --platform linux/arm64 langgenius/dify-plugin-daemon:0.0.1
           
           # 基础组件
           docker pull --platform linux/arm64 postgres:15-alpine
@@ -34,28 +16,18 @@ jobs:
           docker pull --platform linux/arm64 nginx:latest
           docker pull --platform linux/arm64 ubuntu/squid:latest
           docker pull --platform linux/arm64 busybox:latest
-          
-          # 向量数据库
           docker pull --platform linux/arm64 semitechnologies/weaviate:1.27.0
 
       - name: Save to Tar
         run: |
-          echo "正在打包 ARM64 镜像，这可能需要很长时间..."
-          docker save -o dify_arm64_v1.11.4.tar \
+          docker save -o dify_arm64_bundle.tar \
             langgenius/dify-api:1.11.4 \
             langgenius/dify-web:1.11.4 \
             langgenius/dify-sandbox:0.2.12 \
-            langgenius/dify-plugin-daemon:0.0.3 \
+            langgenius/dify-plugin-daemon:0.0.1 \
             postgres:15-alpine \
             redis:6-alpine \
             nginx:latest \
             ubuntu/squid:latest \
             busybox:latest \
             semitechnologies/weaviate:1.27.0
-
-      - name: Upload Artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: dify-arm64-bundle
-          path: dify_arm64_v1.11.4.tar
-          retention-days: 1
